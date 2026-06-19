@@ -17,6 +17,11 @@ can't give you: a proper **ITP** (Inspection Test Plan) on every job, and a
 - **Job board** — columns for *Scheduled → On site → Awaiting inspection →
   Complete*. Tap a card to open it; drag between columns on desktop, or change
   the stage inside the card on a phone.
+- **Check in / check out** — one big button. A worker taps **Check in** on
+  arrival (their name, the time and their location are stamped automatically)
+  and **Check out** when they leave. The job card shows who's on site right
+  now; every job keeps a running log of who worked it, when, for how long,
+  and roughly where — the raw material for hours and invoicing.
 - **ITP, made simple** — five hold points drawn straight from the standard
   waterproofing inspection checklist (Material selection · Substrate ·
   Documentation · Membrane installation · Final flood test). Tap to tick, mark
@@ -29,6 +34,9 @@ can't give you: a proper **ITP** (Inspection Test Plan) on every job, and a
   invoice.
 - **Photos everywhere** — site photos on the job, evidence photos on each hold
   point and each variation. Captured from the phone camera, auto-timestamped.
+- **Everything is time & date stamped** — check-ins, hold-point sign-offs and
+  every photo carry the moment they were captured. Nobody has to remember to
+  write the time down.
 
 The ITP template is based on a *Project Team Inspection Checklist — Waterproofing
 (High Risk)* and references **AS 3740-2021**, **AS 4654.1-2012** and
@@ -36,13 +44,14 @@ The ITP template is based on a *Project Team Inspection Checklist — Waterproof
 
 ## Run it
 
-Requires [Node.js](https://nodejs.org) 18+.
+Requires [Node.js](https://nodejs.org) 22–24.
 
 ```bash
 npm install
 npm run dev      # start the dev server (Vite prints a local URL)
 npm run build    # production build into /dist
 npm run preview  # preview the production build
+npm start        # serve the production build with server.js (used by Render)
 ```
 
 Open the printed URL on your phone (same network) to feel the on-site
@@ -63,23 +72,30 @@ experience.
 ```
 src/
   App.jsx                 # state, persistence, board + modal, completion guard
-  styles.css              # palette + all styling
+  styles.css              # brand palette + all styling
   lib/
-    storage.js            # localStorage load/save (swap this for an API later)
+    storage.js            # localStorage load/save, validates saved data (swap for an API later)
     id.js                 # id generator
+    worker.js              # remembers "who's holding this phone" for check-in
+    geo.js                  # best-effort browser geolocation for check-in/out
   data/
     itpTemplate.js        # the 5 waterproofing hold points + AS references
     seed.js               # default columns and a demo job
   components/
     Board.jsx             # row of columns; drag state
     Column.jsx            # one stage; add-job; drop target
-    JobCard.jsx           # card with ITP "primer" pips and counts
-    JobModal.jsx          # Job / ITP / Variations tabs
+    JobCard.jsx           # card with on-site indicator, ITP "primer" pips, counts
+    JobModal.jsx          # Job / Time / ITP / Variations tabs
+    TimePanel.jsx           # check in / check out, time log, running total
     ItpPanel.jsx          # ITP progress + standards
     HoldPoint.jsx         # one hold point: checklist, pass/fail, sign-off
     VariationsPanel.jsx   # add/track extra works for invoicing
     PhotoStrip.jsx        # camera capture + thumbnails
     Icons.jsx             # inline SVG icons
+
+public/
+  icon.svg               # app icon / favicon
+  logo.svg               # full wordmark lockup
 ```
 
 ## Data model
@@ -94,20 +110,25 @@ board
         itp:        [{ key, title, items[{id,text,checked}], result,
                        notes, photos[], signedBy, signedAt }],
         variations: [{ id, description, cost, photos[], date, status }],
+        timeLog:    [{ id, worker, checkInAt, checkInLoc, checkOutAt, checkOutLoc }],
         createdAt
       }
     }
 ```
 
+`checkInLoc` / `checkOutLoc` are `{ lat, lng, accuracy }` or `null` if the
+browser denied or lacked location — check-in never blocks on it.
+
 ## Roadmap (suggested next steps)
 
-1. **Backend + accounts** — multi-device sync, so James and his five workers
-   see the same board. Replace `storage.js` with API calls.
+1. **Backend + accounts** — multi-device sync, so the office and every worker
+   see the same board live. Replace `storage.js` with API calls.
 2. **PDF handover pack** — one tap to export a job's ITP + photos + variations
    as a branded PDF for the builder. This is the feature builders will rate.
 3. **Photo storage** — move photos off `localStorage` to object storage.
 4. **Offline-first** — site work happens with no signal; queue and sync.
-5. **GPS + time stamps on photos** — strengthens the "where and when" evidence.
+5. **Timesheet / payroll export** — roll every worker's check-ins across all
+   jobs into a daily or weekly summary, exportable for payroll.
 6. **Editable ITP templates** — tiling, firestopping, coatings, so the app
    grows beyond waterproofing.
 

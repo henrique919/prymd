@@ -80,6 +80,35 @@ function normaliseVariations(variations) {
     .filter(Boolean)
 }
 
+function normaliseLoc(loc) {
+  if (!loc || typeof loc !== 'object') return null
+  const lat = Number(loc.lat)
+  const lng = Number(loc.lng)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return { lat, lng, accuracy: Number(loc.accuracy) || null }
+}
+
+function normaliseTimeLog(timeLog) {
+  if (!Array.isArray(timeLog)) return []
+
+  return timeLog
+    .map((entry, index) => {
+      if (!entry || typeof entry !== 'object') return null
+      const checkInAt = safeString(entry.checkInAt)
+      if (!checkInAt) return null
+
+      return {
+        id: safeString(entry.id, `time-${index}`),
+        worker: safeString(entry.worker),
+        checkInAt,
+        checkInLoc: normaliseLoc(entry.checkInLoc),
+        checkOutAt: safeString(entry.checkOutAt),
+        checkOutLoc: normaliseLoc(entry.checkOutLoc),
+      }
+    })
+    .filter(Boolean)
+}
+
 function normaliseCard(card, id) {
   const source = card && typeof card === 'object' ? card : {}
 
@@ -94,6 +123,7 @@ function normaliseCard(card, id) {
     photos: normalisePhotos(source.photos, `job-${id}`),
     itp: normaliseItp(source.itp),
     variations: normaliseVariations(source.variations),
+    timeLog: normaliseTimeLog(source.timeLog),
     createdAt: safeString(source.createdAt, new Date().toISOString()),
   }
 }

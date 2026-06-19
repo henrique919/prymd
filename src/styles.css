@@ -1,25 +1,25 @@
 :root {
-  /* Waterproofing-grounded palette: membrane teal, wet cyan, concrete neutrals */
-  --ink: #14201f;
-  --membrane: #0c4a52;
-  --membrane-2: #11606b;
-  --wet: #1fa6b8;
-  --wet-soft: #d6f0f3;
+  /* Prymd brand palette */
+  --ink: #061b2d;
+  --membrane: #061b2d;
+  --membrane-2: #0f3149;
+  --wet: #0ea5a8;
+  --wet-soft: #e0f4f4;
 
   --pass: #2e9e6b;
   --fail: #d1495b;
   --amber: #e0a03a;
-  --na: #87938f;
+  --na: #67768a;
 
-  --bg: #eef2f1;
+  --bg: #eef2f5;
   --surface: #ffffff;
-  --line: #dbe3e1;
-  --muted: #5e6e6c;
-  --muted-2: #8a9794;
+  --line: #d7dfe6;
+  --muted: #67768a;
+  --muted-2: #97a4b3;
 
   --radius: 14px;
   --radius-sm: 10px;
-  --shadow: 0 1px 2px rgba(20, 32, 31, 0.06), 0 4px 14px rgba(20, 32, 31, 0.06);
+  --shadow: 0 1px 2px rgba(6, 27, 45, 0.06), 0 4px 14px rgba(6, 27, 45, 0.07);
   --font: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   --display: 'Space Grotesk', var(--font);
 }
@@ -53,7 +53,9 @@ input, textarea, select { font-family: inherit; }
   color: #fff;
   padding-top: max(12px, env(safe-area-inset-top));
 }
-.brand { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 10px; line-height: 1.1; min-width: 0; }
+.brand__logo { width: 30px; height: 30px; flex-shrink: 0; display: block; }
+.brand__text { display: flex; flex-direction: column; min-width: 0; }
 .brand__mark {
   font-family: var(--display);
   font-weight: 700;
@@ -157,8 +159,33 @@ main { flex: 1; min-height: 0; }
 }
 .jobcard:active { transform: scale(0.99); }
 .jobcard--primed { border-left-color: var(--wet); }
+.jobcard__titlerow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .jobcard__title { font-weight: 600; font-size: 15px; line-height: 1.25; }
 .jobcard__meta { font-size: 12.5px; color: var(--muted); }
+.jobcard__onsite {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--wet);
+  background: var(--wet-soft);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.jobcard__onsitedot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wet);
+  animation: prymd-pulse 1.6s ease-in-out infinite;
+}
+@keyframes prymd-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
 
 .jobcard__pips { display: flex; align-items: center; gap: 4px; }
 .pip {
@@ -335,6 +362,15 @@ main { flex: 1; min-height: 0; }
   border-radius: 999px;
 }
 .tabs__btn.is-active .tabs__badge { background: var(--wet-soft); color: var(--membrane-2); }
+.tabs__dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wet);
+  margin-left: 4px;
+  animation: prymd-pulse 1.6s ease-in-out infinite;
+}
 
 .modal__body { overflow-y: auto; padding: 14px 16px 28px; }
 .jobfields__row { display: flex; gap: 12px; }
@@ -476,6 +512,59 @@ main { flex: 1; min-height: 0; }
 .itp__standards-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
 .itp__standards ul { margin: 0; padding-left: 16px; }
 .itp__standards li { font-size: 12.5px; color: var(--muted); margin: 3px 0; }
+
+/* ---------- Time / check-in ---------- */
+.timepanel__head { margin-bottom: 12px; }
+.timepanel__total { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--membrane); letter-spacing: -0.02em; }
+.timepanel__totallabel { font-size: 12.5px; color: var(--muted); }
+.timepanel__name { margin-bottom: 10px; }
+
+.checkbtn {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 18px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.checkbtn--in { background: var(--wet); color: #fff; }
+.checkbtn--in:hover { background: #0c8e90; }
+.checkbtn--out { background: var(--membrane); color: #fff; }
+.checkbtn--out:hover { background: var(--membrane-2); }
+.checkbtn:disabled { opacity: 0.7; }
+
+.timelog { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.timelog__empty { font-size: 13px; color: var(--muted); padding: 8px 2px; }
+.timelog__row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.timelog__main { flex: 1; min-width: 0; }
+.timelog__worker { font-weight: 600; font-size: 14px; }
+.timelog__when { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.timelog__links { display: flex; gap: 10px; margin-top: 4px; }
+.timelog__pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--wet);
+  text-decoration: none;
+}
+.timelog__pin:hover { text-decoration: underline; }
+.timelog__dur { font-weight: 700; font-size: 13.5px; color: var(--membrane); flex-shrink: 0; }
 
 /* ---------- Variations ---------- */
 .variations__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PhotoStrip from './PhotoStrip.jsx'
 import ItpPanel from './ItpPanel.jsx'
 import VariationsPanel from './VariationsPanel.jsx'
+import TimePanel from './TimePanel.jsx'
 import { itpProgress } from '../data/itpTemplate.js'
 import { CloseIcon } from './Icons.jsx'
 
@@ -10,7 +11,9 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
   const itp = Array.isArray(card.itp) ? card.itp : []
   const photos = Array.isArray(card.photos) ? card.photos : []
   const variations = Array.isArray(card.variations) ? card.variations : []
+  const timeLog = Array.isArray(card.timeLog) ? card.timeLog : []
   const { signed, total } = itpProgress(itp)
+  const onSite = timeLog.find((e) => e && !e.checkOutAt)
 
   function field(key, value) {
     onChange({ ...card, [key]: value })
@@ -45,6 +48,9 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
         <nav className="tabs">
           <button className={`tabs__btn ${tab === 'job' ? 'is-active' : ''}`} onClick={() => setTab('job')}>
             Job
+          </button>
+          <button className={`tabs__btn ${tab === 'time' ? 'is-active' : ''}`} onClick={() => setTab('time')}>
+            Time {onSite && <span className="tabs__dot" />}
           </button>
           <button className={`tabs__btn ${tab === 'itp' ? 'is-active' : ''}`} onClick={() => setTab('itp')}>
             ITP <span className="tabs__badge">{signed}/{total}</span>
@@ -90,6 +96,10 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
                 Delete job
               </button>
             </div>
+          )}
+
+          {tab === 'time' && (
+            <TimePanel timeLog={timeLog} onChange={(nextTimeLog) => field('timeLog', nextTimeLog)} />
           )}
 
           {tab === 'itp' && (
