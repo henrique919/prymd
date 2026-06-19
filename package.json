@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Prymd — the simple field app for waterproofing contractors. Job board, ITPs and variations from site.",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
