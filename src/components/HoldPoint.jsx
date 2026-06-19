@@ -8,31 +8,46 @@ export default function HoldPoint({ holdPoint, index, onChange }) {
   const [open, setOpen] = useState(false)
   const hp = holdPoint
 
-  const allTicked = hp.items.every((it) => it.checked)
+  const answered = hp.items.filter((it) => it.checked || it.na).length
+  const allAnswered = hp.items.every((it) => it.checked || it.na)
   const signed = !!hp.signedAt && hp.result !== 'pending'
 
   function patch(next) {
     onChange({ ...hp, ...next })
   }
 
-  function toggleItem(id) {
-    patch({ items: hp.items.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it)) })
+  function setItemStatus(id, status) {
+    patch({
+      items: hp.items.map((it) => {
+        if (it.id !== id) return it
+        if (status === 'checked') return { ...it, checked: !it.checked, na: false }
+        if (status === 'na') return { ...it, checked: false, na: !it.na }
+        return it
+      }),
+    })
   }
 
   function setResult(result) {
+    if (result === 'na') {
+      patch({ result, items: hp.items.map((it) => ({ ...it, checked: false, na: true })) })
+      return
+    }
     patch({ result })
   }
 
   function sign() {
+    if (hp.result !== 'na' && !allAnswered) {
+      alert('Before signing off, tick or mark N/A for each checklist item.')
+      return
+    }
     const name = window.prompt('Sign off as (your name):', hp.signedBy || '')
     if (name === null) return
     if (!name.trim()) {
       alert('A name is needed to sign off a hold point.')
       return
     }
-    // Default the result to pass if the inspector ticked everything and
-    // hasn't explicitly failed it.
-    const result = hp.result === 'pending' ? (allTicked ? 'pass' : 'fail') : hp.result
+    // Default to pass once every checklist item has either been ticked or marked N/A.
+    const result = hp.result === 'pending' ? 'pass' : hp.result
     patch({ signedBy: name.trim(), signedAt: new Date().toISOString(), result })
   }
 
@@ -61,17 +76,34 @@ export default function HoldPoint({ holdPoint, index, onChange }) {
 
       {open && (
         <div className="holdpoint__body">
+          <div className="holdpoint__hint">
+            {answered}/{hp.items.length} items answered. Use N/A where a requirement does not apply to this location.
+          </div>
           <ul className="checklist">
             {hp.items.map((it) => (
               <li key={it.id}>
-                <button
-                  className={`check ${it.checked ? 'check--on' : ''}`}
-                  onClick={() => toggleItem(it.id)}
-                  disabled={signed}
-                >
-                  <span className="check__box">{it.checked && <CheckIcon />}</span>
+                <div className={`check check--row ${it.checked ? 'check--on' : ''} ${it.na ? 'check--na' : ''}`}>
+                  <span className="check__box">{it.checked && <CheckIcon />}{it.na && 'N/A'}</span>
                   <span className="check__text">{it.text}</span>
-                </button>
+                  <span className="check__choices">
+                    <button
+                      type="button"
+                      className={`check__choice ${it.checked ? 'is-on' : ''}`}
+                      onClick={() => setItemStatus(it.id, 'checked')}
+                      disabled={signed}
+                    >
+                      Tick
+                    </button>
+                    <button
+                      type="button"
+                      className={`check__choice check__choice--na ${it.na ? 'is-on' : ''}`}
+                      onClick={() => setItemStatus(it.id, 'na')}
+                      disabled={signed}
+                    >
+                      N/A
+                    </button>
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
@@ -112,7 +144,7 @@ export default function HoldPoint({ holdPoint, index, onChange }) {
                   className={`seg__btn ${hp.result === 'na' ? 'seg__btn--na' : ''}`}
                   onClick={() => setResult('na')}
                 >
-                  N/A
+                  Whole HP N/A
                 </button>
               </div>
               <button className="btn btn--primary" onClick={sign}>

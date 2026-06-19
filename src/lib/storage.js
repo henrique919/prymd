@@ -2,7 +2,7 @@ import { seedBoard } from '../data/seed.js'
 import { newItp } from '../data/itpTemplate.js'
 
 const KEY = 'prymd.board.v2'
-const LEGACY_KEY = 'prymd.board.v1'
+const OLD_KEY = 'prymd.board.v1'
 const VALID_RESULTS = new Set(['pending', 'pass', 'fail', 'na'])
 const VALID_VARIATION_STATUSES = new Set(['pending', 'approved'])
 
@@ -51,7 +51,11 @@ function normaliseItp(itp) {
         const savedItem = savedItems.find(
           (candidate) => candidate && (candidate.id === item.id || candidate.text === item.text)
         )
-        return { ...item, checked: Boolean(savedItem?.checked) }
+        return {
+          ...item,
+          checked: Boolean(savedItem?.checked),
+          na: Boolean(savedItem?.na),
+        }
       }),
       result: VALID_RESULTS.has(saved.result) ? saved.result : 'pending',
       notes: safeString(saved.notes),
@@ -110,19 +114,76 @@ function normaliseTimeLog(timeLog) {
     .filter(Boolean)
 }
 
+function normaliseLocation(location, index, sourceCard) {
+  const source = location && typeof location === 'object' ? location : {}
+  const fallbackItp = index === 0 && Array.isArray(sourceCard?.itp) ? sourceCard.itp : undefined
+
+  return {
+    id: safeString(source.id, `loc-${index}`),
+    name: safeString(source.name),
+    building: safeString(source.building),
+    level: safeString(source.level),
+    unit: safeString(source.unit),
+    areaName: safeString(source.areaName),
+    scheduledDate: safeString(source.scheduledDate),
+    scheduledTime: safeString(source.scheduledTime),
+    assignee: safeString(source.assignee),
+    comments: safeString(source.comments),
+    photos: normalisePhotos(source.photos, `loc-${index}`),
+    itp: normaliseItp(source.itp || fallbackItp),
+    createdAt: safeString(source.createdAt, new Date().toISOString()),
+  }
+}
+
+function defaultLocationForCard(source, id) {
+  return normaliseLocation(
+    {
+      id: 'loc-main',
+      name: safeString(source.title, 'Main location'),
+      areaName: safeString(source.title, 'Main location'),
+      scheduledDate: safeString(source.scheduledDate),
+      scheduledTime: safeString(source.scheduledTime),
+      assignee: safeString(source.assignee),
+      comments: safeString(source.description),
+      photos: [],
+      itp: source.itp,
+      createdAt: source.createdAt,
+    },
+    0,
+    source
+  )
+}
+
+function normaliseLocations(locations, sourceCard, id) {
+  if (!Array.isArray(locations) || locations.length === 0) {
+    return [defaultLocationForCard(sourceCard, id)]
+  }
+
+  const next = locations.map((loc, i) => normaliseLocation(loc, i, sourceCard)).filter(Boolean)
+  return next.length ? next : [defaultLocationForCard(sourceCard, id)]
+}
+
 function normaliseCard(card, id) {
   const source = card && typeof card === 'object' ? card : {}
+  const locations = normaliseLocations(source.locations, source, id)
+  const activeLocationId = locations.some((loc) => loc.id === source.activeLocationId)
+    ? safeString(source.activeLocationId)
+    : locations[0]?.id || ''
 
   return {
     id: safeString(source.id, id),
-    title: safeString(source.title, 'Untitled job'),
+    title: safeString(source.title, 'Untitled project'),
     client: safeString(source.client),
     clientEmail: safeString(source.clientEmail),
     area: safeString(source.area),
     assignee: safeString(source.assignee),
     scheduledDate: safeString(source.scheduledDate),
+    scheduledTime: safeString(source.scheduledTime),
     description: safeString(source.description),
     photos: normalisePhotos(source.photos, `job-${id}`),
+    locations,
+    activeLocationId,
+    // Legacy support for older cards. Current ITPs live inside locations.
     itp: normaliseItp(source.itp),
     variations: normaliseVariations(source.variations),
     timeLog: normaliseTimeLog(source.timeLog),
@@ -172,7 +233,7 @@ export function loadBoard() {
   if (!canUseStorage()) return seedBoard()
 
   try {
-    const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY)
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY)
     if (!raw) return seedBoard()
     return normaliseBoard(JSON.parse(raw))
   } catch (err) {
@@ -199,5 +260,5 @@ export function saveBoard(board) {
 export function resetBoard() {
   if (!canUseStorage()) return
   localStorage.removeItem(KEY)
-  localStorage.removeItem(LEGACY_KEY)
+  localStorage.removeItem(OLD_KEY)
 }

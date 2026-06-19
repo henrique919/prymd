@@ -4,6 +4,7 @@ import JobModal from './components/JobModal.jsx'
 import { loadBoard, saveBoard, resetBoard } from './lib/storage.js'
 import { newItp, itpProgress } from './data/itpTemplate.js'
 import { uid } from './lib/id.js'
+import { createLocation } from './lib/location.js'
 
 const COMPLETE_COL = 'col-complete'
 
@@ -22,6 +23,7 @@ export default function App() {
 
   function addCard(colId, title) {
     const id = uid('job')
+    const location = createLocation({ name: 'Main location', itp: newItp() })
     const card = {
       id,
       title,
@@ -30,8 +32,12 @@ export default function App() {
       area: '',
       assignee: '',
       scheduledDate: '',
+      scheduledTime: '',
       description: '',
       photos: [],
+      locations: [location],
+      activeLocationId: location.id,
+      // Kept for backwards compatibility with older saved demo data.
       itp: newItp(),
       variations: [],
       timeLog: [],
@@ -51,7 +57,7 @@ export default function App() {
   }
 
   function deleteCard(id) {
-    if (!window.confirm('Delete this job and its ITP? This cannot be undone.')) return
+    if (!window.confirm('Delete this project/site and its location ITPs? This cannot be undone.')) return
     setBoard((b) => {
       const cards = { ...b.cards }
       delete cards[id]
@@ -67,14 +73,21 @@ export default function App() {
     setOpenId(null)
   }
 
+  function allLocationItpsComplete(card) {
+    const locations = Array.isArray(card.locations) && card.locations.length
+      ? card.locations
+      : [{ itp: card.itp }]
+    return locations.every((loc) => itpProgress(loc.itp).complete)
+  }
+
   function moveCard(cardId, fromCol, toCol) {
     if (fromCol === toCol) return
-    // Guard: don't let a job slip into "Complete" with an unfinished ITP.
+    // Guard: don't let a project slip into "Complete" with unfinished location ITPs.
     if (toCol === COMPLETE_COL) {
-      const { complete, signed, total } = itpProgress(board.cards[cardId].itp)
-      if (!complete) {
+      const card = board.cards[cardId]
+      if (!allLocationItpsComplete(card)) {
         const ok = window.confirm(
-          `This job's ITP isn't finished — ${signed} of ${total} hold points signed.\n\n` +
+          `Not every location ITP is complete for this project/site.\n\n` +
             'Move it to Complete anyway?'
         )
         if (!ok) return
@@ -95,7 +108,7 @@ export default function App() {
   }
 
   function reset() {
-    if (!window.confirm('Reset back to the demo board? Your current jobs will be cleared.')) return
+    if (!window.confirm('Reset back to the demo board? Your current projects will be cleared.')) return
     resetBoard()
     setBoard(loadBoard())
     setOpenId(null)
@@ -108,7 +121,7 @@ export default function App() {
           <img className="brand__logo" src="/icon.svg" alt="" />
           <div className="brand__text">
             <span className="brand__mark">Prymd</span>
-            <span className="brand__tag">Waterproofing ITPs, photos, reports &amp; variations — from site</span>
+            <span className="brand__tag">Waterproofing projects, locations, ITPs &amp; variations — from site</span>
           </div>
         </div>
         <button className="topbar__reset" onClick={reset}>Reset demo</button>

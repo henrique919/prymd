@@ -1,4 +1,5 @@
 import { STANDARDS, itpProgress } from '../data/itpTemplate.js'
+import { locationLabel } from './location.js'
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -14,6 +15,11 @@ function fmtDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function fmtTime(value) {
+  if (!value) return '—'
+  return value
 }
 
 function fmtDateTime(value) {
@@ -81,7 +87,7 @@ function timeSummary(timeLog = []) {
 
 function variationSummary(variations = []) {
   const safe = Array.isArray(variations) ? variations : []
-  if (!safe.length) return '<div class="empty">No variations recorded against this job.</div>'
+  if (!safe.length) return '<div class="empty">No variations recorded against this project.</div>'
   const total = safe.reduce((sum, variation) => sum + (Number(variation.cost) || 0), 0)
   return `
     <table>
@@ -105,8 +111,22 @@ function variationSummary(variations = []) {
   `
 }
 
+function itemIcon(item) {
+  if (item.checked) return '✓'
+  if (item.na) return 'N/A'
+  return '—'
+}
+
+function itemClass(item) {
+  if (item.checked) return 'checked'
+  if (item.na) return 'na'
+  return ''
+}
+
 function holdPointSection(hp, index) {
   const checked = hp.items.filter((item) => item.checked).length
+  const na = hp.items.filter((item) => item.na).length
+  const answered = checked + na
   return `
     <section class="holdpoint-report">
       <div class="holdpoint-head">
@@ -120,11 +140,11 @@ function holdPointSection(hp, index) {
       <div class="signoff-grid">
         <div><strong>Signed by</strong><span>${escapeHtml(hp.signedBy || '—')}</span></div>
         <div><strong>Signed at</strong><span>${escapeHtml(fmtDateTime(hp.signedAt))}</span></div>
-        <div><strong>Checklist</strong><span>${checked}/${hp.items.length} ticked</span></div>
+        <div><strong>Checklist</strong><span>${answered}/${hp.items.length} answered · ${na} N/A</span></div>
       </div>
       <ul class="report-checklist">
         ${hp.items
-          .map((item) => `<li class="${item.checked ? 'checked' : ''}"><span>${item.checked ? '✓' : '—'}</span>${escapeHtml(item.text)}</li>`)
+          .map((item) => `<li class="${itemClass(item)}"><span>${itemIcon(item)}</span>${escapeHtml(item.text)}</li>`)
           .join('')}
       </ul>
       ${hp.notes ? `<div class="notes"><strong>Notes</strong><p>${escapeHtml(hp.notes)}</p></div>` : ''}
@@ -133,19 +153,21 @@ function holdPointSection(hp, index) {
   `
 }
 
-export function buildItpReportHtml(card) {
-  const itp = Array.isArray(card.itp) ? card.itp : []
+export function buildItpReportHtml(card, location) {
+  const reportLocation = location || (Array.isArray(card.locations) ? card.locations[0] : null)
+  const itp = Array.isArray(reportLocation?.itp) ? reportLocation.itp : Array.isArray(card.itp) ? card.itp : []
   const { signed, total } = itpProgress(itp)
   const issuedAt = new Date()
   const passCount = itp.filter((hp) => hp.result === 'pass').length
   const failCount = itp.filter((hp) => hp.result === 'fail').length
   const naCount = itp.filter((hp) => hp.result === 'na').length
+  const locationName = reportLocation ? locationLabel(reportLocation) : '—'
 
   return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Prymd ITP Report — ${escapeHtml(card.title || 'Waterproofing Job')}</title>
+  <title>Prymd ITP Report — ${escapeHtml(card.title || 'Waterproofing Project')}</title>
   <style>
     @page { size: A4; margin: 14mm; }
     * { box-sizing: border-box; }
@@ -156,44 +178,13 @@ export function buildItpReportHtml(card) {
       font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       line-height: 1.45;
     }
-    .page {
-      max-width: 980px;
-      margin: 24px auto;
-      background: #fff;
-      box-shadow: 0 18px 50px rgba(6, 27, 45, 0.14);
-    }
-    .actions {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      padding: 12px 18px;
-      background: rgba(255,255,255,0.94);
-      border-bottom: 1px solid #D7DFE6;
-    }
-    .actions button {
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-weight: 700;
-      background: #061B2D;
-      color: #fff;
-      cursor: pointer;
-    }
+    .page { max-width: 980px; margin: 24px auto; background: #fff; box-shadow: 0 18px 50px rgba(6, 27, 45, 0.14); }
+    .actions { position: sticky; top: 0; z-index: 5; display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; background: rgba(255,255,255,0.94); border-bottom: 1px solid #D7DFE6; }
+    .actions button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; background: #061B2D; color: #fff; cursor: pointer; }
     .actions button.secondary { background: #0EA5A8; }
-    .cover {
-      padding: 38px 42px 32px;
-      color: #fff;
-      background: radial-gradient(circle at 85% 10%, rgba(14,165,168,0.36), transparent 30%), linear-gradient(135deg, #061B2D 0%, #0f3149 100%);
-    }
+    .cover { padding: 38px 42px 32px; color: #fff; background: radial-gradient(circle at 85% 10%, rgba(14,165,168,0.36), transparent 30%), linear-gradient(135deg, #061B2D 0%, #0f3149 100%); }
     .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 42px; }
-    .mark {
-      width: 42px; height: 42px; border: 2px solid #fff; border-radius: 13px;
-      display: grid; place-items: center; color: #fff; font-weight: 900;
-      background: rgba(255,255,255,0.08);
-    }
+    .mark { width: 42px; height: 42px; border: 2px solid #fff; border-radius: 13px; display: grid; place-items: center; color: #fff; font-weight: 900; background: rgba(255,255,255,0.08); }
     .brand-title { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; }
     .tagline { color: #BFEDEE; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
     .cover h1 { margin: 0; font-size: 42px; line-height: 1; letter-spacing: -0.05em; max-width: 650px; }
@@ -224,9 +215,11 @@ export function buildItpReportHtml(card) {
     .signoff-grid span { font-weight: 700; font-size: 12px; }
     .report-checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
     .report-checklist li { display: flex; gap: 8px; color: #465566; font-size: 13px; }
-    .report-checklist li span { flex: 0 0 18px; color: #A7B4C0; font-weight: 900; }
+    .report-checklist li span { flex: 0 0 32px; color: #A7B4C0; font-weight: 900; }
     .report-checklist li.checked { color: #061B2D; }
     .report-checklist li.checked span { color: #2E9E6B; }
+    .report-checklist li.na { color: #67768A; }
+    .report-checklist li.na span { color: #67768A; font-size: 10px; }
     .notes { margin: 13px 0; padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E7EEF3; }
     .notes strong { font-size: 11px; text-transform: uppercase; color: #67768A; letter-spacing: 0.08em; }
     .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
@@ -240,14 +233,8 @@ export function buildItpReportHtml(card) {
     tr:last-child td { border-bottom: 0; }
     .right { text-align: right; }
     .total td { font-weight: 800; background: #F8FAFC; }
-    .footer { margin-top: 34px; padding-top: 15px; border-top: 1px solid #D7DFE6; display: flex; justify-content: space-between; color: #67768A; font-size: 11px; }
-    @media print {
-      body { background: #fff; }
-      .page { box-shadow: none; margin: 0; max-width: none; }
-      .actions { display: none; }
-      .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      .holdpoint-report { break-inside: avoid; }
-    }
+    .footer { margin-top: 34px; padding-top: 15px; border-top: 1px solid #D7DFE6; display: flex; justify-content: space-between; color: #67768A; font-size: 11px; gap: 14px; }
+    @media print { body { background: #fff; } .page { box-shadow: none; margin: 0; max-width: none; } .actions { display: none; } .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; } .holdpoint-report { break-inside: avoid; } }
   </style>
 </head>
 <body>
@@ -266,9 +253,9 @@ export function buildItpReportHtml(card) {
       </div>
       <h1>Waterproofing ITP <span>completion report</span></h1>
       <div class="cover-meta">
-        <div class="cover-card"><strong>Job</strong><span>${escapeHtml(card.title || 'Untitled job')}</span></div>
+        <div class="cover-card"><strong>Project / Site</strong><span>${escapeHtml(card.title || 'Untitled project')}</span></div>
         <div class="cover-card"><strong>Client / Builder</strong><span>${escapeHtml(card.client || '—')}</span></div>
-        <div class="cover-card"><strong>Area</strong><span>${escapeHtml(card.area || '—')}</span></div>
+        <div class="cover-card"><strong>ITP Location</strong><span>${escapeHtml(locationName)}</span></div>
         <div class="cover-card"><strong>Issued</strong><span>${escapeHtml(fmtDateTime(issuedAt.toISOString()))}</span></div>
       </div>
     </section>
@@ -278,20 +265,35 @@ export function buildItpReportHtml(card) {
         <div class="metric"><span>Hold points signed</span><strong>${signed}/${total}</strong></div>
         <div class="metric"><span>Passed</span><strong>${passCount}</strong></div>
         <div class="metric"><span>Failed</span><strong>${failCount}</strong></div>
-        <div class="metric"><span>N/A</span><strong>${naCount}</strong></div>
+        <div class="metric"><span>N/A hold points</span><strong>${naCount}</strong></div>
       </div>
 
-      <h2>Job details</h2>
+      <h2>Project details</h2>
       <table>
         <tbody>
-          <tr><th>Assigned to</th><td>${escapeHtml(card.assignee || '—')}</td></tr>
-          <tr><th>Scheduled date</th><td>${escapeHtml(fmtDate(card.scheduledDate))}</td></tr>
-          <tr><th>Description</th><td>${escapeHtml(card.description || '—')}</td></tr>
+          <tr><th>Project / site</th><td>${escapeHtml(card.title || '—')}</td></tr>
+          <tr><th>Project address</th><td>${escapeHtml(card.area || '—')}</td></tr>
+          <tr><th>Project lead / crew</th><td>${escapeHtml(card.assignee || '—')}</td></tr>
+          <tr><th>Planned date / time</th><td>${escapeHtml(fmtDate(card.scheduledDate))} ${card.scheduledTime ? `· ${escapeHtml(fmtTime(card.scheduledTime))}` : ''}</td></tr>
+          <tr><th>Description / comments</th><td>${escapeHtml(card.description || '—')}</td></tr>
         </tbody>
       </table>
 
-      <h2>Site photos</h2>
+      <h2>ITP location</h2>
+      <table>
+        <tbody>
+          <tr><th>Location</th><td>${escapeHtml(locationName)}</td></tr>
+          <tr><th>Assigned crew</th><td>${escapeHtml(reportLocation?.assignee || card.assignee || '—')}</td></tr>
+          <tr><th>Planned date / time</th><td>${escapeHtml(fmtDate(reportLocation?.scheduledDate))} ${reportLocation?.scheduledTime ? `· ${escapeHtml(fmtTime(reportLocation.scheduledTime))}` : ''}</td></tr>
+          <tr><th>Location comments</th><td>${escapeHtml(reportLocation?.comments || '—')}</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Project photos</h2>
       ${photoGrid(card.photos)}
+
+      <h2>Location photos</h2>
+      ${photoGrid(reportLocation?.photos)}
 
       <h2>ITP hold points</h2>
       ${itp.map((hp, index) => holdPointSection(hp, index)).join('')}
@@ -319,10 +321,12 @@ export function buildItpReportHtml(card) {
 </html>`
 }
 
-export function openItpPdf(card, { autoPrint = false } = {}) {
-  const { complete } = itpProgress(card.itp)
+export function openItpPdf(card, { location = null, autoPrint = false } = {}) {
+  const reportLocation = location || (Array.isArray(card.locations) ? card.locations[0] : null)
+  const reportItp = Array.isArray(reportLocation?.itp) ? reportLocation.itp : card.itp
+  const { complete } = itpProgress(reportItp)
   if (!complete) {
-    alert('Complete and sign every ITP hold point before exporting the PDF.')
+    alert('Complete and sign every ITP hold point for this location before exporting the PDF.')
     return
   }
 
@@ -333,7 +337,7 @@ export function openItpPdf(card, { autoPrint = false } = {}) {
   }
 
   win.document.open()
-  win.document.write(buildItpReportHtml(card))
+  win.document.write(buildItpReportHtml(card, reportLocation))
   win.document.close()
   win.focus()
 
@@ -342,22 +346,27 @@ export function openItpPdf(card, { autoPrint = false } = {}) {
   }
 }
 
-export function issueItpToClient(card) {
-  const { complete, signed, total } = itpProgress(card.itp)
+export function issueItpToClient(card, { location = null } = {}) {
+  const reportLocation = location || (Array.isArray(card.locations) ? card.locations[0] : null)
+  const reportItp = Array.isArray(reportLocation?.itp) ? reportLocation.itp : card.itp
+  const { complete, signed, total } = itpProgress(reportItp)
   if (!complete) {
-    alert('Complete and sign every ITP hold point before issuing to the client.')
+    alert('Complete and sign every ITP hold point for this location before issuing to the client.')
     return
   }
 
-  openItpPdf(card, { autoPrint: false })
+  openItpPdf(card, { location: reportLocation, autoPrint: false })
 
-  const subject = `Prymd ITP completion report — ${card.title || 'Waterproofing job'}`
+  const reportLocationName = reportLocation ? locationLabel(reportLocation) : '—'
+  const subject = `Prymd ITP completion report — ${card.title || 'Waterproofing project'} — ${reportLocationName}`
   const body = [
     `Hi,`,
     '',
     `Please find the waterproofing ITP completion report for ${card.title || 'the waterproofing works'}.`,
     '',
-    `Project / area: ${card.area || '—'}`,
+    `Project / site: ${card.title || '—'}`,
+    `Location: ${reportLocationName}`,
+    `Project address: ${card.area || '—'}`,
     `Hold points signed: ${signed}/${total}`,
     `Result: ITP complete`,
     '',

@@ -1,9 +1,9 @@
 {
   "name": "prymd",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
-  "description": "Prymd — the simple field app for waterproofing contractors. Job board, ITPs, PDF handover reports and variations from site.",
+  "description": "Prymd \u2014 waterproofing project/site planning with location-specific ITPs, QA PDF reports and variations from site.",
   "engines": {
     "node": ">=22 <25"
   },

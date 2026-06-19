@@ -1,10 +1,18 @@
 import HoldPoint from './HoldPoint.jsx'
 import { STANDARDS, itpProgress } from '../data/itpTemplate.js'
-import { issueItpToClient, openItpPdf } from '../lib/itpReport.js'
+import { locationLabel } from '../lib/location.js'
 
-export default function ItpPanel({ card, itp, onChange }) {
+export default function ItpPanel({
+  itp,
+  onChange,
+  location,
+  locations = [],
+  activeLocationId,
+  onSelectLocation,
+  onExport,
+  onIssue,
+}) {
   const { signed, total, complete } = itpProgress(itp)
-  const reportCard = { ...card, itp }
 
   function updateHoldPoint(i, next) {
     const copy = itp.slice()
@@ -12,45 +20,42 @@ export default function ItpPanel({ card, itp, onChange }) {
     onChange(copy)
   }
 
-  function savePdf() {
-    if (!complete) return
-    openItpPdf(reportCard, { autoPrint: true })
-  }
-
-  function issueReport() {
-    if (!complete) return
-    issueItpToClient(reportCard)
-  }
-
   return (
     <div className="itp">
+      <div className="itp__toolbar">
+        <div className="itp__locationpicker">
+          <label className="field__label">Location / ITP set</label>
+          <select className="field" value={activeLocationId || ''} onChange={(e) => onSelectLocation?.(e.target.value)}>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>{locationLabel(loc)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="itp__actions">
+          <button className="btn btn--ghost" onClick={onExport} disabled={!complete} title={!complete ? 'Sign every hold point before exporting' : ''}>
+            Export / save PDF
+          </button>
+          <button className="btn btn--primary" onClick={onIssue} disabled={!complete} title={!complete ? 'Sign every hold point before issuing' : ''}>
+            Issue to client
+          </button>
+        </div>
+      </div>
+
+      <div className="itp__locationnote">
+        <strong>{locationLabel(location)}</strong>
+        <span>
+          This ITP belongs to the selected location only. Add another bathroom, balcony or zone in the Locations tab to create another ITP set.
+        </span>
+      </div>
+
       <div className={`itp__status ${complete ? 'itp__status--done' : ''}`}>
         <div>
           <div className="itp__statusline">
-            {complete ? 'ITP complete — report ready to issue' : `${signed} of ${total} hold points signed`}
+            {complete ? 'Primed — ready to export / issue' : `${signed} of ${total} hold points signed`}
           </div>
           <div className="itp__bar">
             <span style={{ width: `${total ? (signed / total) * 100 : 0}%` }} />
           </div>
-        </div>
-      </div>
-
-      <div className="itp__export">
-        <div>
-          <div className="itp__export-title">Professional ITP PDF</div>
-          <div className="itp__export-note">
-            {complete
-              ? 'Create a clean branded report for saving, printing or issuing to the client.'
-              : 'Finish and sign every hold point before exporting the handover PDF.'}
-          </div>
-        </div>
-        <div className="itp__export-actions">
-          <button className="btn btn--primary" disabled={!complete} onClick={savePdf}>
-            Export / save PDF
-          </button>
-          <button className="btn btn--ghost" disabled={!complete} onClick={issueReport}>
-            Issue to client
-          </button>
         </div>
       </div>
 
