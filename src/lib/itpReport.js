@@ -1,4 +1,4 @@
-import { STANDARDS, itpProgress } from '../data/itpTemplate.js'
+import { STANDARDS, isItpItemAnswered, itpProgress } from '../data/itpTemplate.js'
 import { locationLabel } from './location.js'
 
 function escapeHtml(value) {
@@ -112,21 +112,33 @@ function variationSummary(variations = []) {
 }
 
 function itemIcon(item) {
+  if (item.type === 'product-select') return item.selectedProducts?.length ? 'Products' : '—'
   if (item.checked) return '✓'
   if (item.na) return 'N/A'
   return '—'
 }
 
 function itemClass(item) {
+  if (item.type === 'product-select') return item.selectedProducts?.length ? 'checked product-row' : 'product-row'
   if (item.checked) return 'checked'
   if (item.na) return 'na'
   return ''
 }
 
+function itemText(item) {
+  if (item.type === 'product-select') {
+    const products = Array.isArray(item.selectedProducts) && item.selectedProducts.length
+      ? item.selectedProducts.join(', ')
+      : 'No product selected'
+    return `${item.text}: ${products}`
+  }
+  return item.text
+}
+
 function holdPointSection(hp, index) {
   const checked = hp.items.filter((item) => item.checked).length
   const na = hp.items.filter((item) => item.na).length
-  const answered = checked + na
+  const answered = hp.items.filter(isItpItemAnswered).length
   return `
     <section class="holdpoint-report">
       <div class="holdpoint-head">
@@ -144,7 +156,7 @@ function holdPointSection(hp, index) {
       </div>
       <ul class="report-checklist">
         ${hp.items
-          .map((item) => `<li class="${itemClass(item)}"><span>${itemIcon(item)}</span>${escapeHtml(item.text)}</li>`)
+          .map((item) => `<li class="${itemClass(item)}"><span>${escapeHtml(itemIcon(item))}</span>${escapeHtml(itemText(item))}</li>`)
           .join('')}
       </ul>
       ${hp.notes ? `<div class="notes"><strong>Notes</strong><p>${escapeHtml(hp.notes)}</p></div>` : ''}
@@ -182,17 +194,17 @@ export function buildItpReportHtml(card, location) {
     .actions { position: sticky; top: 0; z-index: 5; display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; background: rgba(255,255,255,0.94); border-bottom: 1px solid #D7DFE6; }
     .actions button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; background: #061B2D; color: #fff; cursor: pointer; }
     .actions button.secondary { background: #0EA5A8; }
-    .cover { padding: 38px 42px 32px; color: #fff; background: radial-gradient(circle at 85% 10%, rgba(14,165,168,0.36), transparent 30%), linear-gradient(135deg, #061B2D 0%, #0f3149 100%); }
-    .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 42px; }
-    .mark { width: 42px; height: 42px; border: 2px solid #fff; border-radius: 13px; display: grid; place-items: center; color: #fff; font-weight: 900; background: rgba(255,255,255,0.08); }
-    .brand-title { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; }
-    .tagline { color: #BFEDEE; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
-    .cover h1 { margin: 0; font-size: 42px; line-height: 1; letter-spacing: -0.05em; max-width: 650px; }
-    .cover h1 span { color: #7EE2E4; display: block; }
+    .cover { padding: 22px 42px 20px; color: #061B2D; background: #fff; border-bottom: 4px solid #0EA5A8; }
+    .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+    .mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-weight: 900; background: #061B2D; }
+    .brand-title { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; }
+    .tagline { color: #0EA5A8; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .cover h1 { margin: 0; font-size: 48px; line-height: 0.95; letter-spacing: -0.06em; max-width: 720px; color: #061B2D; }
+    .cover h1 span { color: #0EA5A8; display: inline; }
     .cover-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 28px; }
-    .cover-card { border: 1px solid rgba(255,255,255,0.17); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.06); }
-    .cover-card strong { display: block; color: #BFEDEE; font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 5px; }
-    .cover-card span { font-weight: 700; font-size: 13px; }
+    .cover-card { border: 1px solid #D7DFE6; border-radius: 12px; padding: 10px 12px; background: #F8FAFC; }
+    .cover-card strong { display: block; color: #67768A; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 4px; }
+    .cover-card span { font-weight: 800; font-size: 12px; }
     .content { padding: 30px 42px 42px; }
     .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
     .metric { border: 1px solid #D7DFE6; border-radius: 14px; padding: 14px; background: #F8FAFC; }
@@ -220,6 +232,7 @@ export function buildItpReportHtml(card, location) {
     .report-checklist li.checked span { color: #2E9E6B; }
     .report-checklist li.na { color: #67768A; }
     .report-checklist li.na span { color: #67768A; font-size: 10px; }
+    .report-checklist li.product-row span { flex-basis: 60px; font-size: 10px; color: #0EA5A8; text-transform: uppercase; letter-spacing: 0.06em; }
     .notes { margin: 13px 0; padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E7EEF3; }
     .notes strong { font-size: 11px; text-transform: uppercase; color: #67768A; letter-spacing: 0.08em; }
     .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
@@ -251,7 +264,7 @@ export function buildItpReportHtml(card, location) {
           <div class="tagline">Prep. Prime. Prove.</div>
         </div>
       </div>
-      <h1>Waterproofing ITP <span>completion report</span></h1>
+      <h1>Inspection Test Plan <span>Report</span></h1>
       <div class="cover-meta">
         <div class="cover-card"><strong>Project / Site</strong><span>${escapeHtml(card.title || 'Untitled project')}</span></div>
         <div class="cover-card"><strong>Client / Builder</strong><span>${escapeHtml(card.client || '—')}</span></div>

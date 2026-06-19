@@ -1,19 +1,36 @@
 // Waterproofing ITP template.
 //
-// Derived from the uploaded "Project Team Inspection Checklist — Trade
-// Activity: Waterproofing (High Risk)", which references:
-//   AS 3740-2021    Waterproofing of domestic wet areas
-//   AS 4654.1-2012  External above-ground membranes — materials
-//   AS 4654.2-2012  External above-ground membranes — design & installation
-//
-// The five hold points below mirror the inspection summary in that document.
-// Wording is plainer and shorter so a worker can tick it on a phone, on site,
-// with one hand. Edit freely — this is just the default template.
+// The five hold points below keep the field workflow deliberately simple.
+// Items can be ordinary tick/N/A checklist rows, or a product-select row for
+// selecting the actual waterproofing products used on the location.
 
 export const STANDARDS = [
   { code: 'AS 3740-2021', title: 'Waterproofing of domestic wet areas' },
   { code: 'AS 4654.1-2012', title: 'External above-ground membranes — materials' },
   { code: 'AS 4654.2-2012', title: 'External above-ground membranes — design & installation' },
+]
+
+export const BAYSET_PRODUCTS = [
+  'WPA 560',
+  'WPA SB',
+  'WPA FC',
+  'WPA 992',
+  'WPA 992 Root Inhibitor Additive',
+  'WPA Drainage Cell',
+  'WPA 460',
+  'WPA SPUR',
+  'WPA MS',
+  'WPA 230UV',
+  'TPA Screed',
+  'WPA 160',
+  'WPA 400',
+  'TPA Lite',
+  'TPA Tru Colour Grout',
+  'TPA Tru Colour Sanitary Silicone',
+  'Tile Edge Balcony Trim',
+  'Coreflute Protection Board',
+  'WPA Elastoband',
+  'WPA 200',
 ]
 
 export const ITP_TEMPLATE = [
@@ -22,6 +39,13 @@ export const ITP_TEMPLATE = [
     title: 'Material selection',
     blurb: 'Right membrane for the job, signed off before anything goes down.',
     items: [
+      {
+        id: 'material-products',
+        text: 'Material Selection',
+        type: 'product-select',
+        help: 'Select the Bayset product or system components used for this location.',
+      },
+      'Membrane product complies with AS 4654.2 / AS 3740',
       'Membrane suits the expected movement of the structure',
       'Membrane compatible with the substrate, glues and applied finishes',
       'Selection matches the spec, manufacturer and Australian Standards',
@@ -72,7 +96,7 @@ export const ITP_TEMPLATE = [
   {
     key: 'final',
     title: 'Final inspection & flood test',
-    blurb: 'The money shot — proof it holds water.',
+    blurb: 'Proof the waterproofing is ready for handover.',
     items: [
       'Installation matches the spec and manufacturer recommendations',
       'No holes or tears in the membrane',
@@ -81,19 +105,49 @@ export const ITP_TEMPLATE = [
   },
 ]
 
+function makeItem(item, hpKey, index) {
+  if (typeof item === 'string') {
+    return {
+      id: `${hpKey}-${index}`,
+      text: item,
+      type: 'check',
+      checked: false,
+      na: false,
+      selectedProducts: [],
+    }
+  }
+
+  return {
+    id: item.id || `${hpKey}-${index}`,
+    text: item.text,
+    type: item.type || 'check',
+    help: item.help || '',
+    checked: false,
+    na: false,
+    selectedProducts: [],
+  }
+}
+
 // Build a fresh, empty ITP (array of hold points) from the template.
 export function newItp() {
   return ITP_TEMPLATE.map((hp) => ({
     key: hp.key,
     title: hp.title,
     blurb: hp.blurb,
-    items: hp.items.map((text, i) => ({ id: `${hp.key}-${i}`, text, checked: false })),
+    items: hp.items.map((item, i) => makeItem(item, hp.key, i)),
     result: 'pending', // pending | pass | fail | na
     notes: '',
     photos: [], // { id, dataUrl, ts }
     signedBy: '',
     signedAt: '',
   }))
+}
+
+export function isItpItemAnswered(item) {
+  if (item.type === 'product-select') {
+    return Array.isArray(item.selectedProducts) && item.selectedProducts.length > 0
+  }
+  return Boolean(item.checked || item.na)
 }
 
 export function itpProgress(itp) {

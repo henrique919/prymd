@@ -1,13 +1,17 @@
 {
   "name": "prymd",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.4.0",
   "type": "module",
-  "description": "Prymd — the simple field app for waterproofing contractors. Job board, ITPs and variations from site.",
+  "description": "Prymd \u2014 waterproofing planning, live jobs, location-specific ITPs, Bayset product selection and clean PDF reports.",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "react": "^18.3.1",

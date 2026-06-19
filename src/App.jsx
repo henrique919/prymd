@@ -1,22 +1,17 @@
 import { useEffect, useState } from 'react'
 import Board from './components/Board.jsx'
 import JobModal from './components/JobModal.jsx'
-import BottomNav from './components/BottomNav.jsx'
-import SearchView from './components/SearchView.jsx'
-import ActivityView from './components/ActivityView.jsx'
-import MenuView from './components/MenuView.jsx'
 import { loadBoard, saveBoard, resetBoard } from './lib/storage.js'
 import { newItp, itpProgress } from './data/itpTemplate.js'
-import { getUser, setUser, ensureUser } from './lib/user.js'
 import { uid } from './lib/id.js'
+import { createLocation } from './lib/location.js'
 
 const COMPLETE_COL = 'col-complete'
 
 export default function App() {
   const [board, setBoard] = useState(loadBoard)
   const [openId, setOpenId] = useState(null)
-  const [view, setView] = useState('board')
-  const [me, setMe] = useState(getUser())
+  const [view, setView] = useState('jobboard')
 
   useEffect(() => {
     saveBoard(board)
@@ -27,69 +22,37 @@ export default function App() {
     ? board.columns.find((c) => c.cardIds.includes(openId))?.id
     : null
 
-  // --- activity logging ---
-  function logToCard(cardId, entry) {
-    setBoard((b) => {
-      const card = b.cards[cardId]
-      if (!card) return b
-      const item = {
-        id: uid('act'),
-        ts: new Date().toISOString(),
-        author: entry.author || 'System',
-        type: entry.type || 'event',
-        text: entry.text || '',
-      }
-      return { ...b, cards: { ...b.cards, [cardId]: { ...card, activity: [...(card.activity || []), item] } } }
-    })
-  }
-
-  // Logger bound to the open card; ensures we have a name for comments/variations.
-  function logOpen(entry) {
-    let author = entry.author
-    if (!author) {
-      author = me || ensureUser()
-      if (author && author !== me) setMe(author)
-    }
-    if (openId) logToCard(openId, { ...entry, author: author || 'System' })
-  }
-
-  // --- cards ---
-  function createCard(colId, title) {
+  function addCard(colId, title) {
     const id = uid('job')
+    const location = createLocation({ name: 'Main location', itp: newItp() })
     const card = {
       id,
       title,
       client: '',
+      clientEmail: '',
       area: '',
-      assignee: me || '',
+      assignee: '',
       scheduledDate: '',
+      scheduledTime: '',
+      awaitingInspection: false,
+      completedAt: '',
       description: '',
-      labels: [],
       photos: [],
+      locations: [location],
+      activeLocationId: location.id,
+      // Kept for backwards compatibility with older saved demo data.
       itp: newItp(),
       variations: [],
-      activity: [
-        { id: uid('act'), ts: new Date().toISOString(), author: me || 'System', type: 'event', text: 'Job created' },
-      ],
+      timeLog: [],
       createdAt: new Date().toISOString(),
     }
     setBoard((b) => ({
       ...b,
       cards: { ...b.cards, [id]: card },
-      columns: b.columns.map((c) => (c.id === colId ? { ...c, cardIds: [...c.cardIds, id] } : c)),
+      columns: b.columns.map((c) =>
+        c.id === colId ? { ...c, cardIds: [...c.cardIds, id] } : c
+      ),
     }))
-    return id
-  }
-
-  function addCard(colId, title) {
-    createCard(colId, title)
-  }
-
-  function quickAdd() {
-    const firstCol = board.columns[0]
-    const id = createCard(firstCol.id, 'New job')
-    setView('board')
-    setOpenId(id)
   }
 
   function updateCard(card) {
@@ -97,80 +60,100 @@ export default function App() {
   }
 
   function deleteCard(id) {
-    if (!window.confirm('Delete this job and its ITP? This cannot be undone.')) return
+    if (!window.confirm('Delete this project/site and its location ITPs? This cannot be undone.')) return
     setBoard((b) => {
       const cards = { ...b.cards }
       delete cards[id]
       return {
         ...b,
         cards,
-        columns: b.columns.map((c) => ({ ...c, cardIds: c.cardIds.filter((cid) => cid !== id) })),
+        columns: b.columns.map((c) => ({
+          ...c,
+          cardIds: c.cardIds.filter((cid) => cid !== id),
+        })),
       }
     })
     setOpenId(null)
   }
 
+  function allLocationItpsComplete(card) {
+    const locations = Array.isArray(card.locations) && card.locations.length
+      ? card.locations
+      : [{ itp: card.itp }]
+    return locations.every((loc) => itpProgress(loc.itp).complete)
+  }
+
   function moveCard(cardId, fromCol, toCol) {
     if (fromCol === toCol) return
+    // Guard: don't let a project slip into "Complete" with unfinished location ITPs.
     if (toCol === COMPLETE_COL) {
-      const { complete, signed, total } = itpProgress(board.cards[cardId].itp)
-      if (!complete) {
+      const card = board.cards[cardId]
+      if (!allLocationItpsComplete(card)) {
         const ok = window.confirm(
-          `This job's ITP isn't finished — ${signed} of ${total} hold points signed.\n\n` +
+          `Not every location ITP is complete for this project/site.\n\n` +
             'Move it to Complete anyway?'
         )
         if (!ok) return
       }
     }
-    const toTitle = board.columns.find((c) => c.id === toCol)?.title || 'a new stage'
     setBoard((b) => ({
       ...b,
+      cards: {
+        ...b.cards,
+        [cardId]: {
+          ...b.cards[cardId],
+          completedAt: toCol === COMPLETE_COL ? (b.cards[cardId].completedAt || new Date().toISOString()) : '',
+        },
+      },
       columns: b.columns.map((c) => {
         if (c.id === fromCol) return { ...c, cardIds: c.cardIds.filter((id) => id !== cardId) }
         if (c.id === toCol) return { ...c, cardIds: [...c.cardIds, cardId] }
         return c
       }),
     }))
-    logToCard(cardId, { author: me || 'System', type: 'event', text: `moved to ${toTitle}` })
   }
 
   function moveOpenCardTo(toCol) {
     if (openId && openColumnId) moveCard(openId, openColumnId, toCol)
   }
 
-  function saveMe(name) {
-    setUser(name)
-    setMe(name)
-  }
-
   function reset() {
-    if (!window.confirm('Reset back to the demo board? Your current jobs will be cleared.')) return
+    if (!window.confirm('Reset back to the demo board? Your current projects will be cleared.')) return
     resetBoard()
     setBoard(loadBoard())
     setOpenId(null)
-    setView('board')
   }
 
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand__mark">Prymd</span>
-          <span className="brand__tag">Waterproofing ITPs, photos &amp; variations — from site</span>
+          <img className="brand__logo" src="/icon.svg" alt="" />
+          <div className="brand__text">
+            <span className="brand__mark">Prymd</span>
+            <span className="brand__tag">Waterproofing projects, locations, ITPs &amp; variations — from site</span>
+          </div>
         </div>
-        {me && <span className="topbar__me" title="You">{me.trim().slice(0, 2).toUpperCase()}</span>}
+        <button className="topbar__reset" onClick={reset}>Reset demo</button>
       </header>
 
-      <main className="main">
-        {view === 'board' && (
-          <Board board={board} onOpenCard={setOpenId} onAddCard={addCard} onMoveCard={moveCard} />
-        )}
-        {view === 'search' && <SearchView board={board} onOpenCard={setOpenId} />}
-        {view === 'activity' && <ActivityView board={board} onOpenCard={setOpenId} />}
-        {view === 'menu' && <MenuView me={me} onSetMe={saveMe} onReset={reset} />}
-      </main>
+      <nav className="workspace-tabs" aria-label="Prymd planner views">
+        <button className={view === 'planner' ? 'is-active' : ''} onClick={() => setView('planner')}>Planner</button>
+        <button className={view === 'scheduled' ? 'is-active' : ''} onClick={() => setView('scheduled')}>Scheduled jobs</button>
+        <button className={view === 'progress' ? 'is-active' : ''} onClick={() => setView('progress')}>In Progress</button>
+        <button className={view === 'jobboard' ? 'is-active' : ''} onClick={() => setView('jobboard')}>Jobboard</button>
+        <button className={view === 'completed' ? 'is-active' : ''} onClick={() => setView('completed')}>Completed folder</button>
+      </nav>
 
-      <BottomNav view={view} onNav={setView} onAdd={quickAdd} />
+      <main>
+        <Board
+          board={board}
+          view={view}
+          onOpenCard={setOpenId}
+          onAddCard={addCard}
+          onMoveCard={moveCard}
+        />
+      </main>
 
       {openCard && (
         <JobModal
@@ -181,8 +164,6 @@ export default function App() {
           onMove={moveOpenCardTo}
           onClose={() => setOpenId(null)}
           onDelete={() => deleteCard(openCard.id)}
-          onLog={logOpen}
-          me={me}
         />
       )}
     </div>

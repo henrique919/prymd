@@ -1,12 +1,22 @@
 import { itpProgress } from '../data/itpTemplate.js'
-import { labelById } from '../data/labels.js'
-import { PhotoIcon, DocIcon, CommentIcon } from './Icons.jsx'
+import { PhotoIcon, DocIcon } from './Icons.jsx'
+
+function formatDate(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
 
 export default function JobCard({ card, onOpen, onDragStart }) {
-  const { signed, total, complete } = itpProgress(card.itp)
-  const variationTotal = card.variations.reduce((s, v) => s + (Number(v.cost) || 0), 0)
-  const labels = (card.labels || []).map(labelById).filter(Boolean)
-  const commentCount = (card.activity || []).filter((a) => a.type === 'comment').length
+  const itp = Array.isArray(card.itp) ? card.itp : []
+  const photos = Array.isArray(card.photos) ? card.photos : []
+  const variations = Array.isArray(card.variations) ? card.variations : []
+  const timeLog = Array.isArray(card.timeLog) ? card.timeLog : []
+  const { signed, total, complete } = itpProgress(itp)
+  const variationTotal = variations.reduce((s, v) => s + (Number(v.cost) || 0), 0)
+  const scheduledDate = formatDate(card.scheduledDate)
+  const onSite = timeLog.find((e) => e && !e.checkOutAt)
 
   return (
     <article
@@ -15,15 +25,17 @@ export default function JobCard({ card, onOpen, onDragStart }) {
       onDragStart={onDragStart}
       onClick={onOpen}
     >
-      {labels.length > 0 && (
-        <div className="jobcard__labels">
-          {labels.map((l) => (
-            <span key={l.id} className="labelbar" style={{ background: l.color }} title={l.name} />
-          ))}
-        </div>
-      )}
-
-      <div className="jobcard__title">{card.title || 'Untitled job'}</div>
+      <div className="jobcard__titlerow">
+        <div className="jobcard__title">{card.title || 'Untitled job'}</div>
+        <span className="jobcard__badges">
+          {card.awaitingInspection && <span className="jobcard__inspect">Awaiting inspection</span>}
+          {onSite && (
+            <span className="jobcard__onsite">
+              <span className="jobcard__onsitedot" /> {onSite.worker}
+            </span>
+          )}
+        </span>
+      </div>
 
       {(card.client || card.area) && (
         <div className="jobcard__meta">
@@ -35,34 +47,31 @@ export default function JobCard({ card, onOpen, onDragStart }) {
 
       {/* ITP "primer coat" — fills as hold points are signed */}
       <div className="jobcard__pips" title={`ITP ${signed}/${total} signed`}>
-        {card.itp.map((hp) => (
+        {itp.map((hp) => (
           <span
             key={hp.key}
             className={`pip ${hp.signedAt && hp.result !== 'pending' ? `pip--${hp.result}` : ''}`}
           />
         ))}
         <span className="jobcard__pipslabel">
-          {complete ? 'Primed' : `ITP ${signed}/${total}`}
+          {complete ? 'Primed · PDF ready' : `ITP ${signed}/${total}`}
         </span>
       </div>
 
       <div className="jobcard__foot">
-        {card.scheduledDate && (
-          <span className="badge">
-            {new Date(card.scheduledDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+        {card.assignee && <span className="tag">{card.assignee}</span>}
+        {scheduledDate && (
+          <span className="jobcard__date">
+            {scheduledDate}
           </span>
         )}
-        {commentCount > 0 && (
-          <span className="badge"><CommentIcon /> {commentCount}</span>
-        )}
-        {card.photos.length > 0 && (
-          <span className="badge"><PhotoIcon /> {card.photos.length}</span>
-        )}
-        {card.variations.length > 0 && (
-          <span className="badge"><DocIcon /> {card.variations.length}</span>
-        )}
         <span className="jobcard__spacer" />
-        {card.assignee && <span className="avatar avatar--sm" title={card.assignee}>{card.assignee.trim().slice(0, 2).toUpperCase()}</span>}
+        {photos.length > 0 && (
+          <span className="jobcard__stat"><PhotoIcon /> {photos.length}</span>
+        )}
+        {variations.length > 0 && (
+          <span className="jobcard__stat"><DocIcon /> {variations.length}</span>
+        )}
       </div>
 
       {variationTotal > 0 && (

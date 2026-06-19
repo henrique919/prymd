@@ -8,13 +8,20 @@ function money(n) {
   return v.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })
 }
 
-export default function VariationsPanel({ variations = [], onChange, onLog, me }) {
+function formatDate(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('en-AU')
+}
+
+export default function VariationsPanel({ variations = [], onChange }) {
   const [adding, setAdding] = useState(false)
   const [desc, setDesc] = useState('')
   const [cost, setCost] = useState('')
   const [photos, setPhotos] = useState([])
+  const safeVariations = Array.isArray(variations) ? variations : []
 
-  const total = variations.reduce((sum, v) => sum + (Number(v.cost) || 0), 0)
+  const total = safeVariations.reduce((sum, v) => sum + (Number(v.cost) || 0), 0)
 
   function add() {
     if (!desc.trim()) {
@@ -29,8 +36,7 @@ export default function VariationsPanel({ variations = [], onChange, onLog, me }
       date: new Date().toISOString(),
       status: 'pending', // pending | approved
     }
-    onChange([...variations, variation])
-    if (onLog) onLog({ type: 'event', author: me, text: `added a variation: ${desc.trim()} (${money(Number(cost) || 0)})` })
+    onChange([...safeVariations, variation])
     setDesc('')
     setCost('')
     setPhotos([])
@@ -39,19 +45,19 @@ export default function VariationsPanel({ variations = [], onChange, onLog, me }
 
   function remove(id) {
     if (!window.confirm('Delete this variation?')) return
-    onChange(variations.filter((v) => v.id !== id))
+    onChange(safeVariations.filter((v) => v.id !== id))
   }
 
   function toggleStatus(id) {
     onChange(
-      variations.map((v) =>
+      safeVariations.map((v) =>
         v.id === id ? { ...v, status: v.status === 'approved' ? 'pending' : 'approved' } : v
       )
     )
   }
 
   function updatePhotos(id, next) {
-    onChange(variations.map((v) => (v.id === id ? { ...v, photos: next } : v)))
+    onChange(safeVariations.map((v) => (v.id === id ? { ...v, photos: next } : v)))
   }
 
   return (
@@ -59,7 +65,7 @@ export default function VariationsPanel({ variations = [], onChange, onLog, me }
       <div className="variations__head">
         <div>
           <div className="variations__count">
-            {variations.length} variation{variations.length === 1 ? '' : 's'}
+            {safeVariations.length} variation{safeVariations.length === 1 ? '' : 's'}
           </div>
           <div className="variations__total">{money(total)} extra work logged</div>
         </div>
@@ -103,7 +109,7 @@ export default function VariationsPanel({ variations = [], onChange, onLog, me }
       )}
 
       <div className="variations__list">
-        {variations.map((v) => (
+        {safeVariations.map((v) => (
           <div key={v.id} className="variation">
             <div className="variation__top">
               <span className="variation__cost">{money(v.cost)}</span>
@@ -125,7 +131,7 @@ export default function VariationsPanel({ variations = [], onChange, onLog, me }
                 label="Photo"
               />
             )}
-            <div className="variation__date">{new Date(v.date).toLocaleDateString()}</div>
+            {formatDate(v.date) && <div className="variation__date">{formatDate(v.date)}</div>}
           </div>
         ))}
       </div>
