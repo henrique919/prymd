@@ -26,6 +26,7 @@ export default function App() {
       id,
       title,
       client: '',
+      clientEmail: '',
       area: '',
       assignee: '',
       scheduledDate: '',
@@ -107,7 +108,7 @@ export default function App() {
           <img className="brand__logo" src="/icon.svg" alt="" />
           <div className="brand__text">
             <span className="brand__mark">Prymd</span>
-            <span className="brand__tag">Waterproofing ITPs, photos &amp; variations — from site</span>
+            <span className="brand__tag">Waterproofing ITPs, photos, reports &amp; variations — from site</span>
           </div>
         </div>
         <button className="topbar__reset" onClick={reset}>Reset demo</button>

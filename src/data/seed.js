@@ -17,6 +17,7 @@ export function seedBoard() {
         id: demoId,
         title: 'Unit 4 — main bathroom',
         client: 'Hartley Builders',
+        clientEmail: 'contracts@hartleybuilders.example',
         area: '12 Marine Pde, Southport',
         assignee: 'Dave',
         scheduledDate: '',

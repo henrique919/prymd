@@ -1,138 +1,109 @@
-# Prymd
+# Prymd Rev 2
 
-**Waterproofing ITPs, photos and variations — sorted from site.**
+**Waterproofing ITPs, photos, PDF reports and variations — sorted from site.**
 
-Prymd is a simple, Trello-style field app for waterproofing contractors. It
-keeps the part the crew already likes — a board of job cards they move along
-and drop photos onto — and adds the two things a whiteboard and a group chat
-can't give you: a proper **ITP** (Inspection Test Plan) on every job, and a
-**variations** log for extra work.
+Prymd is a simple, Trello-style field app for waterproofing contractors. It keeps the part the crew already likes — a board of job cards they move along and drop photos onto — and adds the commercial records owners need: a proper **ITP** on every job, a **variations** log for extra work, and a clean **PDF ITP completion report** once the ITP is complete.
 
-> **Why "Prymd"?** It reads as *primed*. A primed surface is prepped and ready
-> to seal — so every job gets *primed*: checked, photographed, signed off, and
-> ready to hand over. The name is the workflow.
+> **Why "Prymd"?** It reads as *primed*. A primed surface is prepped and ready to seal — so every job gets *primed*: checked, photographed, signed off, reported and ready to hand over.
+
+## Rev 2 update
+
+Rev 2 keeps the app deliberately simple and adds the key missing handover feature:
+
+- **ITP PDF export** — once all hold points are signed, the ITP tab unlocks **Export / save PDF**.
+- **Issue to client** — opens the branded report and starts an email draft to the client contact saved on the job.
+- **Client email field** — optional email field on the Job tab.
+- **Classy report layout** — professional cover page, job details, ITP summary, signed hold points, photos, standards, variations and time log.
+- **No new dependencies** — the PDF path uses the browser print/save-to-PDF flow so the MVP stays lean.
 
 ## What it does
 
-- **Job board** — columns for *Scheduled → On site → Awaiting inspection →
-  Complete*. Tap a card to open it; drag between columns on desktop, or change
-  the stage inside the card on a phone.
-- **Check in / check out** — one big button. A worker taps **Check in** on
-  arrival (their name, the time and their location are stamped automatically)
-  and **Check out** when they leave. The job card shows who's on site right
-  now; every job keeps a running log of who worked it, when, for how long,
-  and roughly where — the raw material for hours and invoicing.
-- **ITP, made simple** — five hold points drawn straight from the standard
-  waterproofing inspection checklist (Material selection · Substrate ·
-  Documentation · Membrane installation · Final flood test). Tap to tick, mark
-  Pass/Fail/N/A, add photos, and sign off with a name and timestamp.
-- **The "can't sneak it through" rule** — a job warns you before it slips into
-  *Complete* with an unfinished ITP. That single guard is the reason to leave
-  Trello: good intentions become an enforced record.
-- **Variations** — log extra work with a description, photos and a cost, mark
-  it pending or approved, and see the running total. This is what feeds the
-  invoice.
-- **Photos everywhere** — site photos on the job, evidence photos on each hold
-  point and each variation. Captured from the phone camera, auto-timestamped.
-- **Everything is time & date stamped** — check-ins, hold-point sign-offs and
-  every photo carry the moment they were captured. Nobody has to remember to
-  write the time down.
+- **Job board** — columns for *Scheduled → On site → Awaiting inspection → Complete*. Tap a card to open it; drag between columns on desktop, or change the stage inside the card on a phone.
+- **Check in / check out** — one big button. A worker taps **Check in** on arrival and **Check out** when they leave. The job card shows who's on site right now; every job keeps a running log.
+- **ITP, made simple** — five hold points based on waterproofing workflows: Material selection · Substrate · Documentation · Membrane installation · Final flood test. Tap to tick, mark Pass/Fail/N/A, add photos, and sign off with a name and timestamp.
+- **Completion guard** — the app warns before a job slips into *Complete* with an unfinished ITP.
+- **PDF handover report** — when every hold point is signed, export a clean ITP completion report for saving, printing or issuing.
+- **Variations** — log extra work with description, photos and cost; mark it pending or approved and see the running total.
+- **Photos everywhere** — site photos on the job, evidence photos on each hold point and each variation. Captured from the phone camera, auto-timestamped.
 
-The ITP template is based on a *Project Team Inspection Checklist — Waterproofing
-(High Risk)* and references **AS 3740-2021**, **AS 4654.1-2012** and
-**AS 4654.2-2012**.
+The ITP template references **AS 3740-2021**, **AS 4654.1-2012** and **AS 4654.2-2012** as default record references. Confirm current project-specific requirements before relying on generated records.
 
 ## Run it
 
-Requires [Node.js](https://nodejs.org) 22–24.
+Requires Node.js 22–24.
 
 ```bash
 npm install
-npm run dev      # start the dev server (Vite prints a local URL)
+npm run dev      # start the dev server
 npm run build    # production build into /dist
 npm run preview  # preview the production build
-npm start        # serve the production build with server.js (used by Render)
+npm start        # serve the production build with server.js
 ```
 
-Open the printed URL on your phone (same network) to feel the on-site
-experience.
+Open the printed URL on your phone, on the same network, to feel the on-site experience.
+
+## How to export a PDF
+
+1. Open a job card.
+2. Complete and sign every ITP hold point.
+3. Open the **ITP** tab.
+4. Click **Export / save PDF**.
+5. Use the browser print dialog to save as PDF or print.
+
+## How to issue to a client
+
+1. Add the client email on the **Job** tab.
+2. Complete and sign every ITP hold point.
+3. Open the **ITP** tab.
+4. Click **Issue to client**.
+5. Prymd opens the report in a new tab and starts an email draft. Save the report as PDF and attach it.
+
+The MVP does not send attachments directly because there is no backend/email service yet. That is intentional to keep Rev 2 simple.
 
 ## Tech
 
-- **React 18 + Vite** — no UI framework, no icon library, plain CSS. Easy to
-  read, easy to change.
-- **No backend yet.** The whole board (including photos, as downscaled JPEG
-  data URLs) is saved to the browser's `localStorage`. That makes the prototype
-  run anywhere with zero setup — but it's per-device and capped at a few MB of
-  photos. Moving to a real backend means replacing one file:
-  [`src/lib/storage.js`](src/lib/storage.js).
+- **React 18 + Vite** — no UI framework, no icon library, plain CSS.
+- **No backend yet.** The whole board, including downscaled photo data URLs, is saved to browser `localStorage`.
+- **PDF export** uses a printable HTML report generated client-side in `src/lib/itpReport.js`.
 
 ## Project structure
 
 ```
 src/
   App.jsx                 # state, persistence, board + modal, completion guard
-  styles.css              # brand palette + all styling
+  styles.css              # brand palette + styling
   lib/
-    storage.js            # localStorage load/save, validates saved data (swap for an API later)
+    storage.js            # localStorage load/save, validates saved data
+    itpReport.js          # professional printable ITP report / client issue helper
     id.js                 # id generator
-    worker.js              # remembers "who's holding this phone" for check-in
-    geo.js                  # best-effort browser geolocation for check-in/out
+    worker.js             # remembers who is holding the phone
+    geo.js                # best-effort browser geolocation
   data/
-    itpTemplate.js        # the 5 waterproofing hold points + AS references
-    seed.js               # default columns and a demo job
+    itpTemplate.js        # waterproofing hold points + standards references
+    seed.js               # default columns and demo job
   components/
-    Board.jsx             # row of columns; drag state
-    Column.jsx            # one stage; add-job; drop target
-    JobCard.jsx           # card with on-site indicator, ITP "primer" pips, counts
-    JobModal.jsx          # Job / Time / ITP / Variations tabs
-    TimePanel.jsx           # check in / check out, time log, running total
-    ItpPanel.jsx          # ITP progress + standards
-    HoldPoint.jsx         # one hold point: checklist, pass/fail, sign-off
-    VariationsPanel.jsx   # add/track extra works for invoicing
-    PhotoStrip.jsx        # camera capture + thumbnails
-    Icons.jsx             # inline SVG icons
+    Board.jsx
+    Column.jsx
+    JobCard.jsx
+    JobModal.jsx
+    TimePanel.jsx
+    ItpPanel.jsx
+    HoldPoint.jsx
+    VariationsPanel.jsx
+    PhotoStrip.jsx
+    Icons.jsx
 
 public/
-  icon.svg               # app icon / favicon
-  logo.svg               # full wordmark lockup
+  icon.svg
+  logo.svg
 ```
 
-## Data model
+## Roadmap
 
-```
-board
- ├─ columns: [{ id, title, cardIds[] }]
- └─ cards: {
-      [id]: {
-        id, title, client, area, assignee, scheduledDate, description,
-        photos:     [{ id, dataUrl, ts }],
-        itp:        [{ key, title, items[{id,text,checked}], result,
-                       notes, photos[], signedBy, signedAt }],
-        variations: [{ id, description, cost, photos[], date, status }],
-        timeLog:    [{ id, worker, checkInAt, checkInLoc, checkOutAt, checkOutLoc }],
-        createdAt
-      }
-    }
-```
+1. Backend + accounts for multi-device sync.
+2. Real file/object storage for photos.
+3. Server-side PDF generation and direct email issuing with attachments.
+4. Offline-first queue and sync.
+5. Editable ITP templates for different trades.
 
-`checkInLoc` / `checkOutLoc` are `{ lat, lng, accuracy }` or `null` if the
-browser denied or lacked location — check-in never blocks on it.
-
-## Roadmap (suggested next steps)
-
-1. **Backend + accounts** — multi-device sync, so the office and every worker
-   see the same board live. Replace `storage.js` with API calls.
-2. **PDF handover pack** — one tap to export a job's ITP + photos + variations
-   as a branded PDF for the builder. This is the feature builders will rate.
-3. **Photo storage** — move photos off `localStorage` to object storage.
-4. **Offline-first** — site work happens with no signal; queue and sync.
-5. **Timesheet / payroll export** — roll every worker's check-ins across all
-   jobs into a daily or weekly summary, exportable for payroll.
-6. **Editable ITP templates** — tiling, firestopping, coatings, so the app
-   grows beyond waterproofing.
-
----
-
-Prototype scaffold. Not legal or compliance advice — confirm current standards
-and your own QA requirements before relying on generated records.
+Prototype scaffold. Not legal or compliance advice — confirm current standards, project specs and your QA requirements before relying on generated records.

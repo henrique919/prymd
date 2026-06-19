@@ -12,7 +12,7 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
   const photos = Array.isArray(card.photos) ? card.photos : []
   const variations = Array.isArray(card.variations) ? card.variations : []
   const timeLog = Array.isArray(card.timeLog) ? card.timeLog : []
-  const { signed, total } = itpProgress(itp)
+  const { signed, total, complete } = itpProgress(itp)
   const onSite = timeLog.find((e) => e && !e.checkOutAt)
 
   function field(key, value) {
@@ -54,6 +54,7 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
           </button>
           <button className={`tabs__btn ${tab === 'itp' ? 'is-active' : ''}`} onClick={() => setTab('itp')}>
             ITP <span className="tabs__badge">{signed}/{total}</span>
+            {complete && <span className="tabs__ready">PDF</span>}
           </button>
           <button className={`tabs__btn ${tab === 'var' ? 'is-active' : ''}`} onClick={() => setTab('var')}>
             Variations <span className="tabs__badge">{variations.length}</span>
@@ -66,6 +67,10 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
               <label className="field__label">Builder / client</label>
               <input className="field" value={card.client || ''} placeholder="Who you're working for"
                 onChange={(e) => field('client', e.target.value)} />
+
+              <label className="field__label">Client email for issuing report</label>
+              <input className="field" type="email" value={card.clientEmail || ''} placeholder="client@example.com"
+                onChange={(e) => field('clientEmail', e.target.value)} />
 
               <label className="field__label">Site address / area</label>
               <input className="field" value={card.area || ''} placeholder="Where the job is"
@@ -103,7 +108,7 @@ export default function JobModal({ card, columns, columnId, onChange, onMove, on
           )}
 
           {tab === 'itp' && (
-            <ItpPanel itp={itp} onChange={(nextItp) => field('itp', nextItp)} />
+            <ItpPanel card={card} itp={itp} onChange={(nextItp) => field('itp', nextItp)} />
           )}
 
           {tab === 'var' && (

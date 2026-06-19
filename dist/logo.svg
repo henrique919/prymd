@@ -1,0 +1,10 @@
+<svg width="640" height="160" viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(8,8)">
+    <path d="M72 8c34 44 54 73 54 102a54 54 0 1 1-108 0c0-29 20-58 54-102z" fill="none" stroke="#061B2D" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M48 110l13 13 28-28" fill="none" stroke="#061B2D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M72 130l58 18-58 18-58-18z" fill="#67768A"/>
+    <path d="M72 146l58 18-58 18-58-18z" fill="#0EA5A8"/>
+  </g>
+  <text x="184" y="92" font-family="'Space Grotesk', 'Inter', system-ui, sans-serif" font-weight="700" font-size="64" letter-spacing="-2" fill="#061B2D">Prymd</text>
+  <text x="186" y="124" font-family="'Inter', system-ui, sans-serif" font-weight="600" font-size="18" letter-spacing="3" fill="#0EA5A8">PREP. PRIME. PROVE.</text>
+</svg>

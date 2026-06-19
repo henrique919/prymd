@@ -1,7 +1,8 @@
 import { seedBoard } from '../data/seed.js'
 import { newItp } from '../data/itpTemplate.js'
 
-const KEY = 'prymd.board.v1'
+const KEY = 'prymd.board.v2'
+const LEGACY_KEY = 'prymd.board.v1'
 const VALID_RESULTS = new Set(['pending', 'pass', 'fail', 'na'])
 const VALID_VARIATION_STATUSES = new Set(['pending', 'approved'])
 
@@ -116,6 +117,7 @@ function normaliseCard(card, id) {
     id: safeString(source.id, id),
     title: safeString(source.title, 'Untitled job'),
     client: safeString(source.client),
+    clientEmail: safeString(source.clientEmail),
     area: safeString(source.area),
     assignee: safeString(source.assignee),
     scheduledDate: safeString(source.scheduledDate),
@@ -170,7 +172,7 @@ export function loadBoard() {
   if (!canUseStorage()) return seedBoard()
 
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY)
     if (!raw) return seedBoard()
     return normaliseBoard(JSON.parse(raw))
   } catch (err) {
@@ -197,4 +199,5 @@ export function saveBoard(board) {
 export function resetBoard() {
   if (!canUseStorage()) return
   localStorage.removeItem(KEY)
+  localStorage.removeItem(LEGACY_KEY)
 }

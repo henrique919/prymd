@@ -51,7 +51,7 @@ export default function JobCard({ card, onOpen, onDragStart }) {
           />
         ))}
         <span className="jobcard__pipslabel">
-          {complete ? 'Primed' : `ITP ${signed}/${total}`}
+          {complete ? 'Primed · PDF ready' : `ITP ${signed}/${total}`}
         </span>
       </div>
 
