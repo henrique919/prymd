@@ -25,6 +25,7 @@ export function seedBoard() {
         photos: [],
         itp: newItp(),
         variations: [],
+        timeLog: [],
         createdAt: new Date().toISOString(),
       },
     },

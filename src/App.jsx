@@ -33,6 +33,7 @@ export default function App() {
       photos: [],
       itp: newItp(),
       variations: [],
+      timeLog: [],
       createdAt: new Date().toISOString(),
     }
     setBoard((b) => ({
@@ -103,8 +104,11 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand__mark">Prymd</span>
-          <span className="brand__tag">Waterproofing ITPs, photos &amp; variations — from site</span>
+          <img className="brand__logo" src="/icon.svg" alt="" />
+          <div className="brand__text">
+            <span className="brand__mark">Prymd</span>
+            <span className="brand__tag">Waterproofing ITPs, photos &amp; variations — from site</span>
+          </div>
         </div>
         <button className="topbar__reset" onClick={reset}>Reset demo</button>
       </header>

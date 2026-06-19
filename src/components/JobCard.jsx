@@ -12,9 +12,11 @@ export default function JobCard({ card, onOpen, onDragStart }) {
   const itp = Array.isArray(card.itp) ? card.itp : []
   const photos = Array.isArray(card.photos) ? card.photos : []
   const variations = Array.isArray(card.variations) ? card.variations : []
+  const timeLog = Array.isArray(card.timeLog) ? card.timeLog : []
   const { signed, total, complete } = itpProgress(itp)
   const variationTotal = variations.reduce((s, v) => s + (Number(v.cost) || 0), 0)
   const scheduledDate = formatDate(card.scheduledDate)
+  const onSite = timeLog.find((e) => e && !e.checkOutAt)
 
   return (
     <article
@@ -23,7 +25,14 @@ export default function JobCard({ card, onOpen, onDragStart }) {
       onDragStart={onDragStart}
       onClick={onOpen}
     >
-      <div className="jobcard__title">{card.title || 'Untitled job'}</div>
+      <div className="jobcard__titlerow">
+        <div className="jobcard__title">{card.title || 'Untitled job'}</div>
+        {onSite && (
+          <span className="jobcard__onsite">
+            <span className="jobcard__onsitedot" /> {onSite.worker}
+          </span>
+        )}
+      </div>
 
       {(card.client || card.area) && (
         <div className="jobcard__meta">
