@@ -87,7 +87,7 @@ export function newItp() {
     key: hp.key,
     title: hp.title,
     blurb: hp.blurb,
-    items: hp.items.map((text, i) => ({ id: `${hp.key}-${i}`, text, checked: false, na: false })),
+    items: hp.items.map((text, i) => ({ id: `${hp.key}-${i}`, text, checked: false })),
     result: 'pending', // pending | pass | fail | na
     notes: '',
     photos: [], // { id, dataUrl, ts }

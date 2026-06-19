@@ -1,24 +1,11 @@
 import { uid } from '../lib/id.js'
 import { newItp } from './itpTemplate.js'
-import { createLocation } from '../lib/location.js'
 
-// Default columns map to "where a project/site is up to" — the thing James tracks
-// in Trello today. Each card is the overall job/site file; locations inside the
-// card each carry their own ITP.
+// Default columns map to "where a job is up to" — the thing James tracks in
+// Trello today. Workers move a job along as it progresses.
 export function seedBoard() {
   const demoId = uid('job')
-  const location = createLocation({
-    building: 'Building 1',
-    level: 'Level 1',
-    unit: 'Unit 105',
-    areaName: 'Bathroom',
-    scheduledDate: '',
-    scheduledTime: '',
-    assignee: 'Dave',
-    comments: 'Internal wet area, hobless shower. Complete substrate check before primer.',
-    itp: newItp(),
-  })
-
+  const now = Date.now()
   return {
     columns: [
       { id: 'col-scheduled', title: 'Scheduled', cardIds: [demoId] },
@@ -29,22 +16,22 @@ export function seedBoard() {
     cards: {
       [demoId]: {
         id: demoId,
-        title: 'Marine Parade Apartments',
+        title: 'Unit 4 — main bathroom',
         client: 'Hartley Builders',
-        clientEmail: '',
         area: '12 Marine Pde, Southport',
         assignee: 'Dave',
         scheduledDate: '',
-        scheduledTime: '',
         description:
-          'Waterproofing project file. Add each bathroom, balcony, podium zone or tanking wall as a separate location with its own ITP.',
+          'Internal wet area, shower + floor. Hobless. Two coats Ardex WPM.',
+        labels: ['domestic', 'urgent'],
         photos: [],
-        locations: [location],
-        activeLocationId: location.id,
         itp: newItp(),
         variations: [],
-        timeLog: [],
-        createdAt: new Date().toISOString(),
+        activity: [
+          { id: uid('act'), type: 'event', author: 'System', text: 'Job created', ts: new Date(now - 7200000).toISOString() },
+          { id: uid('act'), type: 'comment', author: 'Dave', text: 'Builder reckons substrate will be ready Thursday — bring the primer.', ts: new Date(now - 3600000).toISOString() },
+        ],
+        createdAt: new Date(now - 7200000).toISOString(),
       },
     },
   }

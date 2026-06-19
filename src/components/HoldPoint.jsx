@@ -4,51 +4,38 @@ import { CheckIcon } from './Icons.jsx'
 
 // One hold point. Collapsed by default; tap the header to open. Signing it
 // stamps a name + time and locks the visual into a "done" state.
-export default function HoldPoint({ holdPoint, index, onChange }) {
+export default function HoldPoint({ holdPoint, index, onChange, onLog, me }) {
   const [open, setOpen] = useState(false)
   const hp = holdPoint
 
-  const answered = hp.items.filter((it) => it.checked || it.na).length
-  const allAnswered = hp.items.every((it) => it.checked || it.na)
+  const allTicked = hp.items.every((it) => it.checked)
   const signed = !!hp.signedAt && hp.result !== 'pending'
 
   function patch(next) {
     onChange({ ...hp, ...next })
   }
 
-  function setItemStatus(id, status) {
-    patch({
-      items: hp.items.map((it) => {
-        if (it.id !== id) return it
-        if (status === 'checked') return { ...it, checked: !it.checked, na: false }
-        if (status === 'na') return { ...it, checked: false, na: !it.na }
-        return it
-      }),
-    })
+  function toggleItem(id) {
+    patch({ items: hp.items.map((it) => (it.id === id ? { ...it, checked: !it.checked } : it)) })
   }
 
   function setResult(result) {
-    if (result === 'na') {
-      patch({ result, items: hp.items.map((it) => ({ ...it, checked: false, na: true })) })
-      return
-    }
     patch({ result })
   }
 
   function sign() {
-    if (hp.result !== 'na' && !allAnswered) {
-      alert('Before signing off, tick or mark N/A for each checklist item.')
-      return
-    }
-    const name = window.prompt('Sign off as (your name):', hp.signedBy || '')
+    const name = window.prompt('Sign off as (your name):', hp.signedBy || me || '')
     if (name === null) return
     if (!name.trim()) {
       alert('A name is needed to sign off a hold point.')
       return
     }
-    // Default to pass once every checklist item has either been ticked or marked N/A.
-    const result = hp.result === 'pending' ? 'pass' : hp.result
+    // Default the result to pass if the inspector ticked everything and
+    // hasn't explicitly failed it.
+    const result = hp.result === 'pending' ? (allTicked ? 'pass' : 'fail') : hp.result
     patch({ signedBy: name.trim(), signedAt: new Date().toISOString(), result })
+    const label = result === 'pass' ? 'Pass' : result === 'fail' ? 'Fail' : 'N/A'
+    if (onLog) onLog({ type: 'event', author: name.trim(), text: `signed off "${hp.title}" — ${label}` })
   }
 
   function unsign() {
@@ -76,34 +63,17 @@ export default function HoldPoint({ holdPoint, index, onChange }) {
 
       {open && (
         <div className="holdpoint__body">
-          <div className="holdpoint__hint">
-            {answered}/{hp.items.length} items answered. Use N/A where a requirement does not apply to this location.
-          </div>
           <ul className="checklist">
             {hp.items.map((it) => (
               <li key={it.id}>
-                <div className={`check check--row ${it.checked ? 'check--on' : ''} ${it.na ? 'check--na' : ''}`}>
-                  <span className="check__box">{it.checked && <CheckIcon />}{it.na && 'N/A'}</span>
+                <button
+                  className={`check ${it.checked ? 'check--on' : ''}`}
+                  onClick={() => toggleItem(it.id)}
+                  disabled={signed}
+                >
+                  <span className="check__box">{it.checked && <CheckIcon />}</span>
                   <span className="check__text">{it.text}</span>
-                  <span className="check__choices">
-                    <button
-                      type="button"
-                      className={`check__choice ${it.checked ? 'is-on' : ''}`}
-                      onClick={() => setItemStatus(it.id, 'checked')}
-                      disabled={signed}
-                    >
-                      Tick
-                    </button>
-                    <button
-                      type="button"
-                      className={`check__choice check__choice--na ${it.na ? 'is-on' : ''}`}
-                      onClick={() => setItemStatus(it.id, 'na')}
-                      disabled={signed}
-                    >
-                      N/A
-                    </button>
-                  </span>
-                </div>
+                </button>
               </li>
             ))}
           </ul>
@@ -144,7 +114,7 @@ export default function HoldPoint({ holdPoint, index, onChange }) {
                   className={`seg__btn ${hp.result === 'na' ? 'seg__btn--na' : ''}`}
                   onClick={() => setResult('na')}
                 >
-                  Whole HP N/A
+                  N/A
                 </button>
               </div>
               <button className="btn btn--primary" onClick={sign}>
