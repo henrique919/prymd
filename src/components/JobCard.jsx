@@ -1,9 +1,20 @@
 import { itpProgress } from '../data/itpTemplate.js'
 import { PhotoIcon, DocIcon } from './Icons.jsx'
 
+function formatDate(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
 export default function JobCard({ card, onOpen, onDragStart }) {
-  const { signed, total, complete } = itpProgress(card.itp)
-  const variationTotal = card.variations.reduce((s, v) => s + (Number(v.cost) || 0), 0)
+  const itp = Array.isArray(card.itp) ? card.itp : []
+  const photos = Array.isArray(card.photos) ? card.photos : []
+  const variations = Array.isArray(card.variations) ? card.variations : []
+  const { signed, total, complete } = itpProgress(itp)
+  const variationTotal = variations.reduce((s, v) => s + (Number(v.cost) || 0), 0)
+  const scheduledDate = formatDate(card.scheduledDate)
 
   return (
     <article
@@ -24,7 +35,7 @@ export default function JobCard({ card, onOpen, onDragStart }) {
 
       {/* ITP "primer coat" — fills as hold points are signed */}
       <div className="jobcard__pips" title={`ITP ${signed}/${total} signed`}>
-        {card.itp.map((hp) => (
+        {itp.map((hp) => (
           <span
             key={hp.key}
             className={`pip ${hp.signedAt && hp.result !== 'pending' ? `pip--${hp.result}` : ''}`}
@@ -37,17 +48,17 @@ export default function JobCard({ card, onOpen, onDragStart }) {
 
       <div className="jobcard__foot">
         {card.assignee && <span className="tag">{card.assignee}</span>}
-        {card.scheduledDate && (
+        {scheduledDate && (
           <span className="jobcard__date">
-            {new Date(card.scheduledDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+            {scheduledDate}
           </span>
         )}
         <span className="jobcard__spacer" />
-        {card.photos.length > 0 && (
-          <span className="jobcard__stat"><PhotoIcon /> {card.photos.length}</span>
+        {photos.length > 0 && (
+          <span className="jobcard__stat"><PhotoIcon /> {photos.length}</span>
         )}
-        {card.variations.length > 0 && (
-          <span className="jobcard__stat"><DocIcon /> {card.variations.length}</span>
+        {variations.length > 0 && (
+          <span className="jobcard__stat"><DocIcon /> {variations.length}</span>
         )}
       </div>
 
