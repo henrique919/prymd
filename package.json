@@ -1,17 +1,13 @@
 {
-  "name": "prymd",
+  "name": "tanqo",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.1.0",
   "type": "module",
-  "description": "Prymd \u2014 waterproofing planning, live jobs, location-specific ITPs, Bayset product selection and clean PDF reports.",
-  "engines": {
-    "node": ">=22 <25"
-  },
+  "description": "Tanqo — the simple field app for waterproofing contractors. Job board, ITPs, variations and activity, from site.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "start": "node server.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
