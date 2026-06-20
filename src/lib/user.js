@@ -1,7 +1,7 @@
 // No accounts in the prototype — we just remember a name on the device and
 // use it to attribute comments, activity and sign-offs (Trello shows who did
 // what; this is the lightweight version).
-const USER_KEY = 'prymd.user.v1'
+const USER_KEY = 'tanqo.user.v1'
 
 export function getUser() {
   try {

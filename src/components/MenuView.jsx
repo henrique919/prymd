@@ -34,8 +34,9 @@ export default function MenuView({ me, onSetMe, onReset }) {
       <div className="panel">
         <div className="panel__title">About</div>
         <p className="panel__hint">
-          Prymd — Rev 4. A simple field app for waterproofing contractors: a Trello-style board with
-          built-in ITPs, variations, photos and a job activity feed. Prototype data is stored on this
+          <strong>Tanqo</strong> — Rev 5. From <em>tanking</em>, the trade's word for waterproofing a
+          wet area. Tank it, log it, prove it: a Trello-style job board with built-in ITPs, variations,
+          photos and an activity feed, built for waterproofing crews. Prototype data is stored on this
           device only.
         </p>
         <button className="btn btn--danger" onClick={onReset}>Reset demo data</button>
